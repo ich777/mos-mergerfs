@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Install dependencies
-      run: apt-get update && apt-get -y install curl jq dpkg
+      run: sudo apt-get update && sudo apt-get -y install curl jq dpkg
 
     - name: Repack MergerFS
       run: |
