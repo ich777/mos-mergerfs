@@ -1,0 +1,82 @@
+name: MergerFS Repack
+
+on:
+  # Allow to trigger action manually
+  workflow_dispatch:
+
+jobs:
+  repack_mergerfs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install dependencies
+      run: apt-get update && apt-get -y install curl jq dpkg
+
+    - name: Repack MergerFS
+      run: |
+        # Get MergerFS version and create necessary directories
+        MERGERFS_V=$(curl -u ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} -s https://api.github.com/repos/trapexit/mergerfs/releases/latest | jq -r '.tag_name')
+        BUILDDIR=${{ github.workspace }}/$MERGERFS_V
+        PACKAGEDIR=$BUILDDIR/mergerfs_package
+        mkdir -p $PACKAGEDIR/DEBIAN
+        
+        # Download MergerFS and extract it into PACKAGEDIR
+        wget -O $BUILDDIR/mergerfs-static-linux_amd64.tar.gz "https://github.com/trapexit/mergerfs/releases/download/$MERGERFS_V/mergerfs-static-linux_amd64.tar.gz"
+        tar -C $PACKAGEDIR/ -xf $BUILDDIR/mergerfs-static-linux_amd64.tar.gz
+
+
+        cat > $PACKAGEDIR/DEBIAN/control << EOF
+        Package: MergerFS-Static
+        Version: ${MERGERFS_V#v}-mos
+        Architecture: amd64
+        Maintainer: admin@minenet.at
+        Description: MergerFS build for MOS
+        EOF
+
+        cd $BUILDDIR
+        chmod -R 755 $PACKAGEDIR
+        dpkg-deb --build mergerfs_package mos-mergerfs_${MERGERFS_V#v}_amd64.deb
+        md5sum $BUILDDIR/mos-mergerfs_${MERGERFS_V#v}_amd64.deb | awk '{print $1}' > $BUILDDIR/mos-mergerfs_${MERGERFS_V#v}_amd64.deb.md5
+
+        echo "MERGERFS_V=${MERGERFS_V#v}
+        BUILDDIR=$BUILDDIR" >> $GITHUB_ENV
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.MERGERFS_V }}
+        release_name: "MergerFS ${{ env.MERGERFS_V }}"
+        body: |
+          This is the custom Debian package from MergerFS for MOS
+
+          ### Package contents:
+          - [MergerFS Static](https://github.com/trapexit/mergerfs) v${{ env.MERGERFS_V }}
+        draft: false
+        prerelease: false
+
+    - name: Upload deb to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.BUILDDIR }}/mos-mergerfs_${{ env.MERGERFS_V }}_amd64.deb
+        asset_name: mos-mergerfs_${{ env.MERGERFS_V }}_amd64.deb
+        asset_content_type: application/vnd.debian.binary-package
+
+    - name: Upload md5 to Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.BUILDDIR }}/mos-mergerfs_${{ env.MERGERFS_V }}_amd64.deb.md5
+        asset_name: mos-mergerfs_${{ env.MERGERFS_V }}_amd64.deb.md5
+        asset_content_type: text/plain
+
+    - name: Cleanup
+      if: always()
+      run: rm -rf ${{ github.workspace }}/* ${{ github.workspace }}/.*
