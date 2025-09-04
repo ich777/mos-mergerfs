@@ -17,13 +17,21 @@ jobs:
         # Get MergerFS version and create necessary directories
         MERGERFS_V=$(curl -u ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} -s https://api.github.com/repos/trapexit/mergerfs/releases/latest | jq -r '.tag_name')
         BUILDDIR=${{ github.workspace }}/$MERGERFS_V
-        PACKAGEDIR=$BUILDDIR/mergerfs_package
+        PACKAGEDIR=$BUILDDIR/mergerfs_package $PACKAGEDIR/usr/share/doc/mos-mergerfs
         mkdir -p $PACKAGEDIR/DEBIAN
-        
+
+        # Add initial copyright to package dir:
+        echo -e "This package contains software under various licenses.\nSee the following files for details:\n" > $PACKAGEDIR/usr/share/doc/mos-mergerfs/copyright
+
         # Download MergerFS and extract it into PACKAGEDIR
         wget -O $BUILDDIR/mergerfs-static-linux_amd64.tar.gz "https://github.com/trapexit/mergerfs/releases/download/$MERGERFS_V/mergerfs-static-linux_amd64.tar.gz"
         tar -C $PACKAGEDIR/ -xf $BUILDDIR/mergerfs-static-linux_amd64.tar.gz
 
+        # Add licenses
+        cp "${{ github.workspace }}/LICENSE" "$PACKAGEDIR/usr/share/doc/mos-mergerfs/LICENSE"
+        echo -e "- LICENSE: License for packaging scripts" >> $PACKAGEDIR/usr/share/doc/mos-mergerfs/copyright
+        wget -O $PACKAGEDIR/usr/share/doc/mos-mergerfs/LICENSE-mergerfs "https://raw.githubusercontent.com/trapexit/mergerfs/master/LICENSE"
+        echo -e "- LICENSE-mergerfs: License for mergerfs components" >> $PACKAGEDIR/usr/share/doc/mos-mergerfs/copyright
 
         cat > $PACKAGEDIR/DEBIAN/control << EOF
         Package: MergerFS-Static
