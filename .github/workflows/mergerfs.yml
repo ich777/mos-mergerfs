@@ -17,8 +17,8 @@ jobs:
         # Get MergerFS version and create necessary directories
         MERGERFS_V=$(curl -u ${{ github.actor }}:${{ secrets.GITHUB_TOKEN }} -s https://api.github.com/repos/trapexit/mergerfs/releases/latest | jq -r '.tag_name')
         BUILDDIR=${{ github.workspace }}/$MERGERFS_V
-        PACKAGEDIR=$BUILDDIR/mergerfs_package $PACKAGEDIR/usr/share/doc/mos-mergerfs
-        mkdir -p $PACKAGEDIR/DEBIAN
+        PACKAGEDIR=$BUILDDIR/mergerfs_package
+        mkdir -p $PACKAGEDIR/DEBIAN $PACKAGEDIR/usr/share/doc/mos-mergerfs
 
         # Add initial copyright to package dir:
         echo -e "This package contains software under various licenses.\nSee the following files for details:\n" > $PACKAGEDIR/usr/share/doc/mos-mergerfs/copyright
