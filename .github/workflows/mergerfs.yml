@@ -27,7 +27,7 @@ jobs:
         echo -e "This package contains software under various licenses.\nSee the following files for details:\n" > $PACKAGEDIR/usr/share/doc/mos-mergerfs/copyright
 
         # Download MergerFS and extract it into PACKAGEDIR
-        wget -O $BUILDDIR/mergerfs-static-linux_amd64.tar.gz "https://github.com/trapexit/mergerfs/releases/download/$MERGERFS_V/mergerfs-static-linux_amd64.tar.gz"
+        wget -O $BUILDDIR/mergerfs-static-linux_amd64.tar.gz "https://github.com/trapexit/mergerfs/releases/download/${MERGERFS_V}/mergerfs-${MERGERFS_V}-static-linux_amd64.tar.gz"
         tar -C $PACKAGEDIR/ -xf $BUILDDIR/mergerfs-static-linux_amd64.tar.gz
 
         # Add licenses
