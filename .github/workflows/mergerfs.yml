@@ -93,7 +93,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ env.MERGERFS_V }}
-        name: "MergerFS ${{ env.MERGERFS_V }}""
+        name: "MergerFS ${{ env.MERGERFS_V }}"
         body: |
           This is the custom Debian package from MergerFS for MOS
 
